@@ -1,0 +1,36 @@
+<body>
+    <img src="{{ url_for('static', filename='alzheimer.png') }}" alt="Logo" class="logo"> <!-- Logo path -->
+    <h1>Upload an Image for Alzheimer's Disease Prediction</h1>
+    <div class="container">
+        <form action="/predict" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept="image/*" required>
+            <button type="submit">Predict</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <div class="attribution">
+        <a href="https://www.flaticon.com/free-icons/alzheimer" title="alzheimer icons" style="color: #fff;">Alzheimer icons created by Victoruler - Flaticon</a>
+    </div>
+
+    <script>
+        const form = document.querySelector('form');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            document.getElementById('result').innerHTML = `
+                <h2>Prediction: ${result.prediction}</h2>
+                <p>Confidence: ${result.confidence.toFixed(2)}</p>
+                <h3>Scores:</h3>
+                <ul>
+                    ${Object.entries(result.scores).map(([name, score]) => `<li>${name}: ${score.toFixed(2)}</li>`).join('')}
+                </ul>
+            `;
+        };
+    </script>
+</body>
