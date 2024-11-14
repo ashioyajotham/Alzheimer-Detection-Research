@@ -39,15 +39,18 @@ if uploaded_file is not None:
         st.image(image, caption='Uploaded MRI Scan', width=300)
         
         # Preprocess the image
-        img_array = np.array(image.resize((176, 176)))
+        img_array = np.array(image.resize((224, 224)))  # Changed from 176 to 224
         # Convert to grayscale if image is RGB or RGBA
         if len(img_array.shape) == 3:
-            img_array = np.mean(img_array, axis=2)
+            img_array = img_array  # Remove grayscale conversion
+        else:
+            # If image is grayscale, convert to RGB
+            img_array = np.stack((img_array,) * 3, axis=-1)
         
         # Normalize and reshape
         img_array = img_array / 255.0
-        img_array = img_array.reshape(1, 176, 176)
-        
+        img_array = img_array.reshape(1, 224, 224, 3)  # Changed shape to match model expectations
+                
         # Make prediction
         with st.spinner('Analyzing the MRI scan...'):
             prediction = model.predict(img_array)
