@@ -17,7 +17,7 @@ st.write("Upload a brain MRI scan to detect the stage of Alzheimer's Disease")
 # Load the model
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model('alzheimer_cnn_model.h5')
+    model = tf.keras.models.load_model('alzheimer_model.h5')
     return model
 
 model = load_model()
