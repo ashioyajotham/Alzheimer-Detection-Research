@@ -5,52 +5,81 @@ import tensorflow as tf
 
 # Set page config
 st.set_page_config(
-    page_title="Digit Recognition App",
-    page_icon="✏️",
+    page_title="Alzheimer's Detection",
+    page_icon="🧠",
     layout="centered"
 )
 
 # Title and description
-st.title("Handwritten Digit Recognition")
-st.write("Draw a digit or upload an image to predict the number!")
+st.title("Alzheimer's Disease Detection")
+st.write("Upload a brain MRI scan to detect the stage of Alzheimer's Disease")
 
 # Load the model
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model('mnist_model.h5')
+    model = tf.keras.models.load_model('alzheimer_model.h5')
     return model
 
 model = load_model()
 
+# Define classes
+classes = ['Mild Demented', 'Moderate Demented', 'Non Demented', 'Very Mild Demented']
+
 # File uploader
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Choose an MRI scan...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Process uploaded image
+    # Display the uploaded image
     image = Image.open(uploaded_file)
-    img_array = np.array(image.convert('L').resize((28, 28)))
+    st.image(image, caption='Uploaded MRI Scan', width=300)
     
-    # Normalize and reshape
+    # Preprocess the image
+    img_array = np.array(image.resize((176, 176)))
     img_array = img_array / 255.0
-    img_array = img_array.reshape(1, 28, 28)
+    img_array = np.expand_dims(img_array, axis=0)
     
     # Make prediction
-    prediction = model.predict(img_array)
-    predicted_digit = np.argmax(prediction)
+    with st.spinner('Analyzing the MRI scan...'):
+        prediction = model.predict(img_array)
+        predicted_class = classes[np.argmax(prediction)]
+        confidence = np.max(prediction) * 100
     
     # Display results
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(image, caption='Uploaded Image', width=200)
-    with col2:
-        st.write("## Prediction:")
-        st.write(f"This looks like the digit: **{predicted_digit}**")
-        st.write("Confidence scores:")
-        st.bar_chart(prediction[0])
+    st.write("## Analysis Results")
+    st.write(f"**Diagnosis:** {predicted_class}")
+    st.write(f"**Confidence:** {confidence:.2f}%")
+    
+    # Show probability distribution
+    st.write("### Probability Distribution")
+    prob_dict = {class_name: float(prob) * 100 for class_name, prob in zip(classes, prediction[0])}
+    st.bar_chart(prob_dict)
 
 # Add information about the app
 st.markdown("""
 ---
 ### About
-This app uses a Convolutional Neural Network trained on the MNIST dataset to recognize handwritten digits.
+This application uses deep learning to analyze brain MRI scans and detect different stages of Alzheimer's Disease. 
+The model has been trained on a dataset of brain MRI scans and can classify them into four categories:
+- Non Demented
+- Very Mild Demented
+- Mild Demented
+- Moderate Demented
+
+### Important Note
+This tool is for educational purposes only and should not be used as a substitute for professional medical diagnosis.
+Please consult with healthcare professionals for medical advice.
 """)
+
+# Add sidebar with additional information
+with st.sidebar:
+    st.header("How to Use")
+    st.write("""
+    1. Upload a brain MRI scan image
+    2. Wait for the analysis
+    3. View the results and probability distribution
+    
+    For best results:
+    - Use clear, high-quality MRI scans
+    - Images should be properly oriented
+    - Ensure the scan shows the full brain structure
+    """)
