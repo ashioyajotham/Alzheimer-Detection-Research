@@ -40,14 +40,13 @@ if uploaded_file is not None:
         
         # Preprocess the image
         img_array = np.array(image.resize((176, 176)))
-        # Handle different channel cases
-        if len(img_array.shape) == 2:  # Grayscale
-            img_array = np.stack((img_array,)*3, axis=-1)
-        elif img_array.shape[-1] == 4:  # RGBA
-            img_array = img_array[..., :3]
-            
+        # Convert to grayscale if image is RGB or RGBA
+        if len(img_array.shape) == 3:
+            img_array = np.mean(img_array, axis=2)
+        
+        # Normalize and reshape
         img_array = img_array / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
+        img_array = img_array.reshape(1, 176, 176)
         
         # Make prediction
         with st.spinner('Analyzing the MRI scan...'):
