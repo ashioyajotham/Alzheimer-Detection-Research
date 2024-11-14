@@ -20,7 +20,11 @@ def load_model():
     model = tf.keras.models.load_model('alzheimers_cnn_model.h5')
     return model
 
-model = load_model()
+try:
+    model = load_model()
+except:
+    st.error("Failed to load model. Please check if the model file exists.")
+    st.stop()
 
 # Define classes
 classes = ['Mild Demented', 'Moderate Demented', 'Non Demented', 'Very Mild Demented']
@@ -29,30 +33,41 @@ classes = ['Mild Demented', 'Moderate Demented', 'Non Demented', 'Very Mild Deme
 uploaded_file = st.file_uploader("Choose an MRI scan...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Display the uploaded image
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded MRI Scan', width=300)
-    
-    # Preprocess the image
-    img_array = np.array(image.resize((176, 176)))
-    img_array = img_array / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-    
-    # Make prediction
-    with st.spinner('Analyzing the MRI scan...'):
-        prediction = model.predict(img_array)
-        predicted_class = classes[np.argmax(prediction)]
-        confidence = np.max(prediction) * 100
-    
-    # Display results
-    st.write("## Analysis Results")
-    st.write(f"**Diagnosis:** {predicted_class}")
-    st.write(f"**Confidence:** {confidence:.2f}%")
-    
-    # Show probability distribution
-    st.write("### Probability Distribution")
-    prob_dict = {class_name: float(prob) * 100 for class_name, prob in zip(classes, prediction[0])}
-    st.bar_chart(prob_dict)
+    try:
+        # Display the uploaded image
+        image = Image.open(uploaded_file)
+        st.image(image, caption='Uploaded MRI Scan', width=300)
+        
+        # Preprocess the image
+        img_array = np.array(image.resize((176, 176)))
+        # Handle different channel cases
+        if len(img_array.shape) == 2:  # Grayscale
+            img_array = np.stack((img_array,)*3, axis=-1)
+        elif img_array.shape[-1] == 4:  # RGBA
+            img_array = img_array[..., :3]
+            
+        img_array = img_array / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+        
+        # Make prediction
+        with st.spinner('Analyzing the MRI scan...'):
+            prediction = model.predict(img_array)
+            predicted_class = classes[np.argmax(prediction)]
+            confidence = np.max(prediction) * 100
+        
+        # Display results
+        st.write("## Analysis Results")
+        st.write(f"**Diagnosis:** {predicted_class}")
+        st.write(f"**Confidence:** {confidence:.2f}%")
+        
+        # Show probability distribution
+        st.write("### Probability Distribution")
+        prob_dict = {class_name: float(prob) * 100 for class_name, prob in zip(classes, prediction[0])}
+        st.bar_chart(prob_dict)
+        
+    except Exception as e:
+        st.error(f"An error occurred during processing: {str(e)}")
+        st.stop()
 
 # Add information about the app
 st.markdown("""
